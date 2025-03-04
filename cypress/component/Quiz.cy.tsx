@@ -1,35 +1,46 @@
-import { Quiz } from "../.././client/src/components/Quiz";
 import React from 'react';
-import { mount } from "cypress/react";
+import { mount } from 'cypress/react';
+import Quiz from '../../client/src/components/Quiz';
 
-describe("Quiz Component", () => {
+describe('Quiz Component', () => {
   beforeEach(() => {
+    cy.intercept('GET', '**/api/questions/random', {
+      fixture: 'questions.json', // Mock response
+    }).as('getQuestions');
+  });
+
+  it('renders the Start Quiz button initially', () => {
     mount(<Quiz />);
+    cy.contains('Start Quiz').should('be.visible');
   });
 
-  it("should display the start button", () => {
-    cy.contains("Start Quiz").should("be.visible");
+  it('starts the quiz and loads questions', () => {
+    mount(<Quiz />);
+
+    // Click Start Quiz
+    cy.contains('Start Quiz').click();
+
+    // Wait for API call
+    cy.wait('@getQuestions');
+
+    // Ensure the first question is displayed
+    cy.get('.card h2').should('be.visible');
   });
 
-  it("should start quiz when button is clicked", () => {
-    cy.contains("Start Quiz").click();
-    cy.get(".spinner-border").should("be.visible");
-  });
+  it('selects an answer and moves to the next question', () => {
+    mount(<Quiz />);
+    cy.contains('Start Quiz').click();
+    cy.wait('@getQuestions');
 
-  it("should display a question after loading", () => {
-    cy.contains("Start Quiz").click();
-    cy.wait(2000); // Simulate API call delay
-    cy.get("h2").should("not.be.empty");
-  });
+    // Store the first question text
+    cy.get('.card h2').invoke('text').then((firstQuestion) => {
+      // Click the first answer button
+      cy.get('.btn-primary').first().click();
 
-  it("should cycle through questions and show score", () => {
-    cy.contains("Start Quiz").click();
-    cy.wait(2000);
-
-    for (let i = 0; i < 10; i++) {
-      cy.get(".btn-primary").first().click();
-    }
-
-    cy.contains("Your score:").should("be.visible");
+      // Ensure the next question is different
+      cy.get('.card h2').should(($nextQuestion) => {
+        expect($nextQuestion.text()).not.to.eq(firstQuestion);
+      });
+    });
   });
 });

@@ -1,14 +1,20 @@
-import { defineConfig } from "cypress";
+import { defineConfig } from 'cypress';
+import viteConfig from './vite.config';
 
 export default defineConfig({
-  e2e: {
-    baseUrl: "http://localhost:3000", // Update if using a different port
-    supportFile: false, // Optional: No extra support file
-  },
   component: {
     devServer: {
-      framework: "react",
-      bundler: "vite",
+      framework: 'react',
+      bundler: 'vite',
+      viteConfig,
+    },
+    indexHtmlFile: "cypress/support/component-index.html",
+  },
+
+  e2e: {
+    baseUrl: 'http://localhost:3002',
+    setupNodeEvents(on, config) {
+      // implement node event listeners here
     },
   },
 });
